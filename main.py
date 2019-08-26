@@ -49,8 +49,9 @@ cv2.waitKey(0)
 '''
 
 
-img_rgb =cv2.imread('images/rgb.jpg', cv2.IMREAD_UNCHANGED)
+img_rgb =cv2.imread('images/rgb.jpg', cv2.IMREAD_COLOR)
 img_me =cv2.imread('images/me.jfif', cv2.IMREAD_UNCHANGED)
+img_me_copy = np.copy(img_me)
 
 img_rgb_v, img_rgb_h, _ = img_rgb.shape
 img_me_v, img_me_h, _ = img_me.shape
@@ -62,9 +63,27 @@ img_diff_h = np.abs(img_rgb_h - img_me_h)
 [img_me_new_h_s, img_me_new_h_e]= [img_diff_h//2, img_diff_h//2] if img_diff_h/2.0 % 2 == 0 else [img_diff_h//2+ 1, img_diff_h//2]
 
 img_me_crop = img_me[img_me_new_v_s + 1:img_me_v - img_me_new_v_e + 1, img_me_new_h_s + 1:img_me_h - img_me_new_h_e + 1]
+#Average
+img_composed = img_me_crop//2 + img_rgb//2
 
-img_composed = img_me_crop + img_rgb
-
-img_composed[img_composed > 255] = 255
 cv2.imshow('cropped image', img_composed)
 cv2.waitKey(0)
+
+#Scaling
+
+img_me_brighter = np.round(img_me_copy * 1.2)
+img_me_darker = np.round(img_me_copy * 0.9)
+img_me_brighter = img_me_brighter.astype('int32')
+img_me_darker = img_me_darker.astype('int32')
+img_me_brighter[img_me_brighter > 255] = 255
+
+plt.subplot(1,3,1)
+plt.title('bright')
+plt.imshow( img_me_brighter)
+plt.subplot(1,3,2)
+plt.title('dark')
+plt.imshow( img_me_darker)
+plt.subplot(1,3,3)
+plt.title('original')
+plt.imshow(img_me_copy)
+plt.show()
