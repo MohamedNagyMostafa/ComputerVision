@@ -8,6 +8,11 @@ import matplotlib.pyplot as plt
 src= 'images/me.jfif'
 title = 'my image'
 
+def intensity(img1, img2, alpha):
+	return alpha * img1 + (1- alpha) * img2
+
+def intensity_sub(img1, img2, alpha):
+	return np.abs(alpha * img1 - (1- alpha) * img2)
 #cv2.line(img, (0, 127), (255, 127), (0,255,0))
 '''
 #i = cv2.imshow(title, img)	
@@ -51,6 +56,7 @@ cv2.waitKey(0)
 
 img_rgb =cv2.imread('images/rgb.jpg', cv2.IMREAD_COLOR)
 img_me =cv2.imread('images/me.jfif', cv2.IMREAD_UNCHANGED)
+'''
 img_me_copy = np.copy(img_me)
 
 img_rgb_v, img_rgb_h, _ = img_rgb.shape
@@ -64,26 +70,25 @@ img_diff_h = np.abs(img_rgb_h - img_me_h)
 
 img_me_crop = img_me[img_me_new_v_s + 1:img_me_v - img_me_new_v_e + 1, img_me_new_h_s + 1:img_me_h - img_me_new_h_e + 1]
 #Average
-img_composed = img_me_crop//2 + img_rgb//2
+img_composed = intensity_sub(img_me_crop, img_rgb, alpha = 0.2)/255
+
 
 cv2.imshow('cropped image', img_composed)
 cv2.waitKey(0)
 
 #Scaling
 
-img_me_brighter = np.round(img_me_copy * 1.2)
-img_me_darker = np.round(img_me_copy * 0.9)
-img_me_brighter = img_me_brighter.astype('int32')
-img_me_darker = img_me_darker.astype('int32')
-img_me_brighter[img_me_brighter > 255] = 255
+img_me_brighter = np.round(img_me_copy * 1.2)/255
+img_me_darker = np.round(img_me_copy * 0.9)/255
 
-plt.subplot(1,3,1)
-plt.title('bright')
-plt.imshow( img_me_brighter)
-plt.subplot(1,3,2)
-plt.title('dark')
-plt.imshow( img_me_darker)
-plt.subplot(1,3,3)
-plt.title('original')
-plt.imshow(img_me_copy)
-plt.show()
+cv2.imshow('bright', img_me_brighter)
+cv2.imshow('dark', img_me_darker)
+cv2.waitKey(0)
+'''
+h,v,c = img_me.shape
+noise = np.random.randn(h,v,c) * 32
+
+img_noise = (img_me + noise)
+
+cv2.imshow('noise',img_noise/255 )
+cv2.waitKey(0)
