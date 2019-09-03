@@ -50,8 +50,7 @@ def topK(container, k):
 
 def hough_line(image, indx, indy):
 	imgy, imgx = image.shape
-	x_c, y_c = int(imgx/2.0), int(imgy/2.0)
-	diag = np.sqrt(x_c**2+y_c**2)
+	diag = np.sqrt(imgx**2+imgy**2)
 
 	r_values = np.linspace(-diag, diag, 2*diag)
 	theta_values = np.deg2rad(np.arange(-90.0, 91.0))
@@ -62,61 +61,57 @@ def hough_line(image, indx, indy):
 
 	accumulator = np.zeros((len(r_values) , len(theta_values)))	
 
-	#Coordinate transformation 
-	indx_d = indx - x_c
-	indy_d = indy - y_c
-
 	for xi, yi in zip(indx, indy):
 		for theta in range(181):
-			r = round(xi * cos_t[theta] + yi * sin_t[theta])
+			r = round(xi * cos_t[theta] + yi * sin_t[theta]) + diag
 			accumulator[int(r), theta] +=1
 
+	return accumulator, theta_values, r_values
 
-	return accumulator, theta_values, r_values, (x_c, y_c)
-
-def draw_hough_lines(image, rhos, thetas, x_c, y_c):
-	for rho, theta in zip(rhos, thetas):
-		image = line_coordinate(image, theta, rho,x_c, y_c)
+def draw_hough_lines(image, indx, indy, thetas, rhos):
+	#for rho, theta in zip(rhos, thetas):
+	for x, y in zip(indx, indy):
+		image = line_eq(image, thetas[x], rhos[y])
 
 	return image
-def line_coordinatek(image, theta, rho,x_c, y_c):
-	if theta == 90:
-		x0_d = rho/np.sin(np.deg2rad(theta))
-		y0_d = 0
-		x1_d = x0_d
-		y1_d = y_c
 
-	elif theta == 0 and theta == 180:
-		x0_d = 0
-		y0_d = rho/np.cos(np.deg2rad(theta))
-		x1_d = x_c
-		y1_d = y0_d
-		#Intersection by x-axis => y_d=0
+def line_eq(image, theta, r):
+	x = r * np.cos(theta)
+	y = r * np.sin(theta)
+	y_max, x_max, _ = image.shape
+
+	if theta == 180 or theta == 0:
+		x1, x2 = int(x), int(x)
+		y1, y2 = 0, y_max
+	elif theta == 90:
+		y1, y2 = int(y), int(y)
+		x1, x2 = 0, x_max
+
 	else:
-		x0_d = rho/np.cos(np.deg2rad(theta))
-		y0_d = 0
-		#Intersection by y-axis => x_d=0
-		y1_d = rho/np.sin(np.deg2rad(theta))
-		x1_d = 0
-		print(rho, theta, x0_d, y1_d)
-
-	x0, x1, y0, y1 = np.int(np.round(x0_d + x_c)), np.int(np.round(x1_d + x_c)), np.int(np.round(y0_d + y_c)), np.int(np.round(y1_d + y_c))
-	print(x0,y0,x1,y1)
-	cv2.line(image, (x0, y0), (x1, y1), (0,0,255), 2)
-
+		m = -x/y
+		k = r/np.sin(theta)
+		x1 = 0
+		y1 = int(x1 * m + k)
+		x2 = x_max
+		y2 = int(x2 * m + k)
+	
+		
+	
+	cv2.line(image, (x1, y1), (x2, y2), (0,0,255), 2)
+	return image
+# Testing
+def line(image, theta, r):
+	a = np.cos(theta)
+	b = np.sin(theta)
+	x0 = a*r
+	y0 = b*r
+	x1 = int(x0 + 1000*(-b))
+	y1 = int(y0 + 1000*(a))
+	x2 = int(x0 - 1000*(-b))
+	y2 = int(y0 - 1000*(a))
+	cv2.line(image, (x1, y1), (x2, y2), (0,0,255), 2)
 	return image
 
-def line_coordinate(image, theta, rho,x_c, y_c):
-	y0 = int(np.round(rho*np.sin(np.deg2rad(theta)) + y_c))
-	x0 = int(np.round(rho*np.cos(np.deg2rad(theta)) + x_c))
-	m = y0/x0
-	#Intersection with y = mx
-	y1 = int(np.round(y0 +y0/x0 * 1000))
-	x1 = int(np.round(x0 + x0/y0 * 1000))
-
-	cv2.line(image, (x0, y0), (x1, y1), (0,0,255), 2)
-
-	return image
 
 def show_images(row, column, images, titles, types):
 
