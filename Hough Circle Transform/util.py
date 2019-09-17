@@ -18,50 +18,37 @@ def show_images(row, column, images, titles, types):
 		plt.yticks([])
 	plt.show()
 
-def canny(image, sigma, significantH=0.2, significantL= 0.2):
-	mid_value = np.median(image)
-	lower = int(max(0,mid_value * sigma - significantL * mid_value))
-	higher = int(min(255,mid_value * sigma + significantH * mid_value))
-	print(mid_value, lower, higher)	
-	return cv2.Canny(image, lower, higher)
-
-
-def topk(acc, k):
-	a_values, b_values, r_values = np.array([]), np.array([]), np.array([])
-
-	for it in Counter(acc):
-		a_values = it[0]
-		b_values = it[1]
-		r_values = it[2]
-		k -=1
-		if k < 1:
-			break
-
-	return a_values, b_values, r_values
-
 def gaussian_blur(image, size, sigma):
 	return cv2.GaussianBlur(image, (size,size), sigma)
 
-def hough_circle(image, indx, indy, max_r, min_r, step= 100):
-	acc =defaultdict(int)
-	theta_values = np.deg2rad([np.linspace(0,360, step)])
-	r_values = np.expand_dims(np.arange(min_r, max_r+1, 1),0)
-	r_num = r_values.shape[1]
-	print(r_num)
-	term_cos = np.dot(r_values.transpose(), np.cos(theta_values))
-	print(term_cos.shape)
-	term_sin = np.dot(r_values.transpose(), np.sin(theta_values))
-	r = term_cos.shape[0] * term_cos.shape[1] * len(theta_values)
-	av, bv = np.array([]), np.array([])
-	for x, y in zip(indx, indy):
-		a_values, b_values= x - term_cos.flatten(), y - term_sin.flatten()
-		for i, (a, b) in enumerate(zip(a_values, b_values)):
-			acc[int(a), int(b), i % r_num] +=1
-			av = np.append(av, a)
-			bv = np.append(bv,b)
+def hough_circle(image, indx, indy, max_r, min_r, min_x, min_y, max_x, max_y):
+	shift_x = min(max_r, min_x) - max(max_r, min_x)
+	shift_y = min(max_r, min_y) - max(max_r, min_y)
 
+	norm_x = -shift_x
+	norm_y = -shift_y
+	norm_r = -min_r
+
+	shape_a = max_x + max_r + norm_x
+	shape_b = max_y + max_r + norm_y
+	shape_r = max_r - min_r
+
+	acc = np.zeros((shape_a+1, shape_b+1, shape_r))
+	print(shape_a, shape_b, shape_r)
+	print(norm_x,norm_y, norm_r)
+	theta_values = np.expand_dims(np.deg2rad(np.arange(0,360, 10)),0)
+	radius_values = np.expand_dims((np.arange(min_r, max_r, 1)),0).T
+	r = np.repeat(radius_values,len(theta_values),1)
+
+	term_cos = np.dot(radius_values, np.cos(theta_values))
+	term_sin = np.dot(radius_values, np.sin(theta_values))
+
+	for x, y in zip(indx,indy):
+		a = x - term_cos
+		b = y - term_sin
+		acc[a.astype(int) + norm_x,b.astype(int) + norm_y,r.astype(int) + norm_r] += 1
 			
-	return acc, r_values, av, bv
+	return acc, norm_x, norm_y, norm_r
 
 def read_RGBimage(src):
 	image = cv2.imread(src)
@@ -73,12 +60,9 @@ def to_gray(image):
 def gaussian_blur(image, size, sigma):
 	return cv2.GaussianBlur(image, (size,size), sigma)
 
-def canny(image, sigma, significantH=0.2, significantL= 0.2):
-	mid_value = np.median(image)
-	lower = int(max(0,mid_value * sigma - significantL * mid_value))
-	higher = int(min(255,mid_value * sigma + significantH * mid_value))
-	print(mid_value, lower, higher)	
-	return cv2.Canny(image, lower, higher)
+def canny(image, sigma, lower, higher):
+	mid_value = np.median(image)* sigma 
+	return cv2.Canny(image, mid_value + lower, mid_value + higher)
 
 def show_image(image, type, title='image'):
 	if type == 'rgb':
